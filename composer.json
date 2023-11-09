@@ -1,0 +1,19 @@
+{
+    "name": "ngearing/phpdiff",
+    "description": "Diff remote & local files",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "NG\\PHPDiff\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Nathan Gearing",
+            "email": "natgearing@gmail.com"
+        }
+    ],
+    "require": {
+        "banago/phploy": "^4.9"
+    }
+}
