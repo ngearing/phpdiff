@@ -4,6 +4,8 @@ namespace NG\PHPDiff;
 
 use Banago\PHPloy\PHPloy;
 use Banago\PHPloy\Options;
+use League\Flysystem\Adapter\Local;
+use League\Flysystem\Filesystem;
 
 class PHPDiff extends PHPloy {
     public function __construct()
@@ -31,12 +33,13 @@ class PHPDiff extends PHPloy {
             throw new \Exception("The server \"{$this->server}\" is not defined in {$this->iniFileName}.");
         }
 
+        $this->currentServerName = $this->server;
         $this->server = $this->servers[$this->server];
 
         $this->connect($this->server);
 
         // Checkout revision from server.
-        $remoteRevision = null;
+        $remoteRevision = $this->revision;
         if ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
             $this->debug('Remote revision: <bold>'.$remoteRevision);
@@ -64,25 +67,7 @@ class PHPDiff extends PHPloy {
         // Diff files between local & server.
         $diffs = $this->compareFilesWithRemote();
 
-        // Output diff results to console.
-        foreach ($diffs as $filename => $result) {
-            switch ($result['status']) {
-                case 'modified':
-                    echo "File:   {$filename}\n";
-                    echo "Status: Modified.\n";
-                    break;
-                    case 'deleted':
-                    echo "File:   {$filename}\n";
-                    echo "Status: Deleted.\n";
-                    break;
-                default:
-                    continue 2;
-                    }
-            
-            echo "\nLocal:\n".trim($result['local'])."\n";
-            echo "\nRemote:\n".trim($result['remote'])."\n";
-            echo "\n-------------------------------\n";
-            }
+
     }
 
     public function compareFilesWithRemote() {
@@ -96,11 +81,29 @@ class PHPDiff extends PHPloy {
     }
 
     public function getLocalFiles() {
-        $files = [];
+        $adapter = new Local($this->repo);
+        $filesystem = new Filesystem($adapter);
+        $files = $filesystem->listContents('', true);
+        $files = $this->filterIgnoredFiles( $files );
+
         return $files;
     }
     public function getRemoteFiles() {
-        $files = [];
+        $files = $this->connection->listContents('', true);
         return $files;        
+    }
+
+    public function filterIgnoredFiles(array $files ) : array {
+
+        foreach($files as $i => $file) {
+            foreach($this->filesToExclude[$this->currentServerName] as $pattern) {
+                if (pattern_match($pattern, $file['path'])) {
+                    unset($files[$i]);
+                    break;
+                }
+            }
+        }
+
+        return $files;
     }
 }
