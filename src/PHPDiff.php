@@ -75,7 +75,18 @@ class PHPDiff extends PHPloy {
         $localFiles = $this->getLocalFiles();
         $remoteFiles = $this->getRemoteFiles();
 
-
+        // Check remote for modified or untracked files.
+        foreach($localFiles as $lFile) {
+            foreach($remoteFiles as $rFile) {
+                $rFile['modified'] = false;
+                if ($lFile['path'] == $rFile['path']) {
+                    if ($rFile['size'] !== $lFile['size'] && $rFile['timestamp'] > $lFile['timestamp']) {
+                        $rFile['modified'] = true;
+                        $diff[] = $rFile;
+                    }
+                }
+            }
+        }
 
         return $diff;
     }
@@ -90,6 +101,8 @@ class PHPDiff extends PHPloy {
     }
     public function getRemoteFiles() {
         $files = $this->connection->listContents('', true);
+        $files = $this->filterIgnoredFiles( $files );
+
         return $files;        
     }
 
