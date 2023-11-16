@@ -74,12 +74,15 @@ class PHPDiff extends PHPloy {
             foreach( $diffs as $diff ) {
                 $this->cli->bold()->out(' - '.$diff['path'].($diff['new']?' *NEW* ':''));
             }
+
+            $this->git->checkout($this->git->branch);
             exit(1);
         }
 
     }
 
     public function compareFilesWithRemote() {
+        $this->globalFilesToExclude[] = $this->dotRevisionFileName;
         $diff = [];
         $localFiles = $this->getLocalFiles();
         $remoteFiles = $this->getRemoteFiles();
