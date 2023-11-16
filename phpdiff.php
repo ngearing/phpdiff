@@ -6,5 +6,5 @@ try {
     $phpdiff = new NG\PHPDiff\PHPDiff();
 } catch( Exception $e ) {
     echo 'Error: ',  $e->getMessage(), "\n";
-    exit;
+    exit(1);
 }

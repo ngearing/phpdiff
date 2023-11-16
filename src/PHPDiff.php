@@ -34,7 +34,9 @@ class PHPDiff extends PHPloy {
         }
 
         $this->currentServerName = $this->server;
-        $this->server = $this->servers[$this->server];
+        if ( isset( $this->servers[$this->server] )) {
+            $this->server = $this->servers[$this->currentServerName];
+        }
 
         $this->connect($this->server);
 
@@ -66,7 +68,14 @@ class PHPDiff extends PHPloy {
 
         // Diff files between local & server.
         $diffs = $this->compareFilesWithRemote();
-
+        if ( $diffs ) {
+            $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
+            $this->cli->bold()->yellow('Modified files have been found on the server!!!');
+            $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
+            foreach( $diffs as $diff ) {
+                $this->cli->bold()->yellow(' - '.$diff['path'].($diff['new']?' *NEW* ':''));
+            }
+        }
 
     }
 
@@ -76,15 +85,21 @@ class PHPDiff extends PHPloy {
         $remoteFiles = $this->getRemoteFiles();
 
         // Check remote for modified or untracked files.
-        foreach($localFiles as $lFile) {
-            foreach($remoteFiles as $rFile) {
-                $rFile['modified'] = false;
-                if ($lFile['path'] == $rFile['path']) {
-                    if ($rFile['size'] !== $lFile['size'] && $rFile['timestamp'] > $lFile['timestamp']) {
-                        $rFile['modified'] = true;
-                        $diff[] = $rFile;
-                    }
+        foreach($remoteFiles as $rPath => $rFile) {
+            $rFile['modified'] = false;
+            $rFile['new'] = false;
+
+            if (isset($localFiles[$rPath])) {
+                if (
+                    $rFile['size'] !== $localFiles[$rPath]['size'] && 
+                    $rFile['timestamp'] > $localFiles[$rPath]['timestamp']) {
+                    $rFile['modified'] = true;
+                    $diff[] = $rFile;
                 }
+            } else {
+                $rFile['modified'] = true;
+                $rFile['new'] = true;
+                $diff[] = $rFile;
             }
         }
 
@@ -97,13 +112,13 @@ class PHPDiff extends PHPloy {
         $files = $filesystem->listContents('', true);
         $files = $this->filterIgnoredFiles( $files );
 
-        return $files;
+        return array_combine(array_column($files,'path'), $files);
     }
     public function getRemoteFiles() {
         $files = $this->connection->listContents('', true);
         $files = $this->filterIgnoredFiles( $files );
 
-        return $files;        
+        return array_combine(array_column($files,'path'), $files);
     }
 
     public function filterIgnoredFiles(array $files ) : array {
