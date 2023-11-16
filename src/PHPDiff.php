@@ -22,7 +22,7 @@ class PHPDiff extends PHPloy {
             throw new \Exception("'{$this->repo}' is not a Git repository.");
         }
 
-        if (! isset($this->server)) {
+        if (! isset($this->server) || $this->server === '') {
             throw new \Exception("Please set a server to check.");
         }
 
@@ -46,7 +46,7 @@ class PHPDiff extends PHPloy {
             $remoteRevision = $this->connection->read($this->dotRevision);
             $this->debug('Remote revision: <bold>'.$remoteRevision);
         } else {
-            $this->cli->out('No revision found. Fresh upload...');
+            throw new \Exception('No revision found on remote server...');
         }
         $output = $this->git->checkout($remoteRevision);
 
@@ -69,11 +69,9 @@ class PHPDiff extends PHPloy {
         // Diff files between local & server.
         $diffs = $this->compareFilesWithRemote();
         if ( $diffs ) {
-            $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
             $this->cli->bold()->yellow('Modified files have been found on the server!!!');
-            $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
             foreach( $diffs as $diff ) {
-                $this->cli->bold()->yellow(' - '.$diff['path'].($diff['new']?' *NEW* ':''));
+                $this->cli->bold()->out(' - '.$diff['path'].($diff['new']?' *NEW* ':''));
             }
         }
 
