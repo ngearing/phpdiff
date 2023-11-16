@@ -42,6 +42,7 @@ class PHPDiff extends PHPloy {
 
         // Checkout revision from server.
         $remoteRevision = $this->revision;
+        $this->dotRevision = $this->dotRevisionFileName;
         if ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
             $this->debug('Remote revision: <bold>'.$remoteRevision);
@@ -73,6 +74,7 @@ class PHPDiff extends PHPloy {
             foreach( $diffs as $diff ) {
                 $this->cli->bold()->out(' - '.$diff['path'].($diff['new']?' *NEW* ':''));
             }
+            exit(1);
         }
 
     }
